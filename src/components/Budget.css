@@ -1,0 +1,67 @@
+.budget {
+  max-width: 1200px;
+}
+
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.budget-header h2 {
+  font-size: 2rem;
+}
+
+.primary-btn {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--ubuntu-terracotta), var(--ubuntu-sunset));
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.budget-empty {
+  background: var(--bg-card);
+  padding: var(--spacing-2xl);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.budget-empty h3 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.budget-empty p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.secondary-btn {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-weight: 600;
+  border: 2px solid var(--border-color);
+}
+
+.secondary-btn:hover {
+  background: var(--bg-primary);
+  border-color: var(--ubuntu-sage);
+}

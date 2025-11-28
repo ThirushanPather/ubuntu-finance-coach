@@ -1,0 +1,65 @@
+.transactions {
+  max-width: 1200px;
+}
+
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.transactions-header h2 {
+  font-size: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.add-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 8px;
+  font-weight: 600;
+  color: white;
+}
+
+.add-btn.income {
+  background: linear-gradient(135deg, var(--ubuntu-sage), var(--ubuntu-forest));
+}
+
+.add-btn.expense {
+  background: linear-gradient(135deg, var(--ubuntu-terracotta), var(--ubuntu-sunset));
+}
+
+.add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.transactions-empty {
+  background: var(--bg-card);
+  padding: var(--spacing-2xl);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.transactions-empty .empty-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.transactions-empty h3 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.transactions-empty p {
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
