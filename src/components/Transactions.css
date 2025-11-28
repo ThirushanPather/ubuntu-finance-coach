@@ -63,3 +63,130 @@
   max-width: 500px;
   margin: 0 auto;
 }
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.filter-tabs button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #8B4B3B;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Manrope', sans-serif;
+}
+
+.filter-tabs button.active {
+  background: #C45D3F;
+  color: white;
+}
+
+.filter-tabs button:hover:not(.active) {
+  background: #E8D5B7;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid #E8D5B7;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.transaction-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-card.income {
+  border-left-color: #7A9B76;
+}
+
+.transaction-card.expense {
+  border-left-color: #C45D3F;
+}
+
+.transaction-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+}
+
+.transaction-icon {
+  font-size: 1.5rem;
+}
+
+.transaction-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transaction-category {
+  font-weight: 700;
+  color: #4A3428;
+  font-size: 1rem;
+}
+
+.transaction-description {
+  font-size: 0.85rem;
+  color: #8B4B3B;
+}
+
+.transaction-date {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.transaction-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.transaction-amount {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.transaction-amount.income {
+  color: #7A9B76;
+}
+
+.transaction-amount.expense {
+  color: #C45D3F;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 4px;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
