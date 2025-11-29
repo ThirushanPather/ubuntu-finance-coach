@@ -1,62 +1,92 @@
 import React, { useState } from 'react';
+import { useFinance } from '../contexts/FinanceContext';
 import './TransactionModal.css';
 
 export default function AddToGoalModal({ goal, onClose, onSubmit }) {
   const [amount, setAmount] = useState('');
+  const [error, setError] = useState('');
+  const { getCurrentBalance } = useFinance();
+
+  const currentBalance = getCurrentBalance();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (amount && parseFloat(amount) > 0) {
-      onSubmit(parseFloat(amount));
-      onClose();
-    }
-  };
+    const amountNum = parseFloat(amount);
 
-  const remaining = goal.target - goal.current;
+    if (!amount || isNaN(amountNum) || amountNum <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    if (amountNum > currentBalance) {
+      setError(`Insufficient balance. You only have R${currentBalance.toFixed(2)} available.`);
+      return;
+    }
+
+    onSubmit(amountNum);
+    onClose();
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>💰 Add to {goal.name}</h3>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <h2>Add to {goal.name}</h2>
+          <button className="close-btn" onClick={onClose}>×</button>
         </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="goal-progress-info">
-            <div className="info-row">
-              <span>Current:</span>
-              <strong>R {goal.current.toFixed(2)}</strong>
-            </div>
-            <div className="info-row">
-              <span>Target:</span>
-              <strong>R {goal.target.toFixed(2)}</strong>
-            </div>
-            <div className="info-row highlight">
-              <span>Remaining:</span>
-              <strong>R {remaining.toFixed(2)}</strong>
-            </div>
-          </div>
 
+        <div className="balance-info">
+          <div className="balance-label">Your Current Balance:</div>
+          <div className={`balance-value ${currentBalance < 0 ? 'negative' : ''}`}>
+            R {currentBalance.toFixed(2)}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Amount to Add (R)</label>
+            <label>Amount to Add</label>
             <input
               type="number"
               step="0.01"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setError('');
+              }}
+              placeholder="Enter amount"
               required
-              autoFocus
             />
+            {error && <div className="error-message">{error}</div>}
+          </div>
+
+          <div className="goal-progress-preview">
+            <div className="preview-label">After adding this amount:</div>
+            <div className="preview-stats">
+              <div className="preview-item">
+                <span>Goal Progress:</span>
+                <span className="preview-value">
+                  R{((goal.current || 0) + parseFloat(amount || 0)).toFixed(2)} / R{goal.target.toFixed(2)}
+                </span>
+              </div>
+              <div className="preview-item">
+                <span>Remaining Balance:</span>
+                <span className={`preview-value ${(currentBalance - parseFloat(amount || 0)) < 0 ? 'negative' : ''}`}>
+                  R{(currentBalance - parseFloat(amount || 0)).toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="cancel-btn" onClick={onClose}>
+            <button type="button" className="secondary-btn" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="submit-btn">
-              Add Funds
+            <button 
+              type="submit" 
+              className="primary-btn"
+              disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > currentBalance}
+            >
+              Add to Goal
             </button>
           </div>
         </form>

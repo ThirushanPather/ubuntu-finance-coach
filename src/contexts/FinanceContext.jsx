@@ -84,7 +84,16 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateBudget = (newBudget) => {
-    setBudget(newBudget);
+    // Add IDs to categories if they don't have them
+    const categoriesWithIds = newBudget.categories.map((cat, index) => ({
+      id: cat.id || `${Date.now()}-${index}`,
+      ...cat
+    }));
+    
+    setBudget({
+      ...newBudget,
+      categories: categoriesWithIds
+    });
     checkBadges();
   };
 
@@ -228,6 +237,15 @@ export const FinanceProvider = ({ children }) => {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
+  // NEW: Calculate current balance
+  const getCurrentBalance = () => {
+    const totalIncome = getTotalIncome();
+    const totalExpenses = getTotalExpenses();
+    const totalSavingsContributions = savingsGoals.reduce((sum, g) => sum + g.current, 0);
+    
+    return totalIncome - totalExpenses - totalSavingsContributions;
+  };
+
   const value = {
     user,
     updateUser,
@@ -249,7 +267,8 @@ export const FinanceProvider = ({ children }) => {
     streak,
     getTotalIncome,
     getTotalExpenses,
-    getCategorySpending
+    getCategorySpending,
+    getCurrentBalance
   };
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

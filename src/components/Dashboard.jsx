@@ -3,101 +3,150 @@ import { useFinance } from '../contexts/FinanceContext';
 import TransactionModal from './TransactionModal';
 import './Dashboard.css';
 
-export default function Dashboard({ userName }) {
+export default function Dashboard() {
   const { 
-    getTotalIncome, 
-    getTotalExpenses, 
     transactions, 
-    addTransaction,
+    getCurrentBalance, 
+    getTotalExpenses, 
     savingsGoals,
+    badges, 
     streak,
-    badges
+    addTransaction 
   } = useFinance();
   
-  const [showModal, setShowModal] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState('income');
 
-  const totalIncome = getTotalIncome();
-  const totalExpenses = getTotalExpenses();
-  const savingsProgress = savingsGoals.length > 0 
-    ? Math.round((savingsGoals.reduce((sum, g) => sum + g.current, 0) / savingsGoals.reduce((sum, g) => sum + g.target, 0)) * 100) || 0
-    : 0;
+  const currentBalance = getCurrentBalance();
+  const monthlyExpenses = getTotalExpenses();
+  const totalSavings = savingsGoals.reduce((sum, g) => sum + g.current, 0);
 
-  const stats = [
-    { label: 'Monthly Income', value: `R ${totalIncome.toFixed(2)}`, icon: '💰', color: 'sage' },
-    { label: 'Monthly Expenses', value: `R ${totalExpenses.toFixed(2)}`, icon: '📊', color: 'terracotta' },
-    { label: 'Savings Goal', value: `${savingsProgress}%`, icon: '🎯', color: 'sky' },
-    { label: 'Day Streak', value: streak.current, icon: '🔥', color: 'sunset' },
-  ];
+  const handleAddTransaction = (type) => {
+    setModalType(type);
+    setShowModal(true);
+  };
 
-  const recentTransactions = transactions.slice(0, 5);
-
-  const handleAddTransaction = (transaction) => {
+  const handleSubmitTransaction = (transaction) => {
     addTransaction(transaction);
+    setShowModal(false);
+  };
+
+  const badgeIcons = {
+    first_transaction: '🎯',
+    first_budget: '📊',
+    week_streak: '🔥',
+    saved_1000: '💰',
+    goal_achieved: '🎉'
+  };
+
+  const badgeNames = {
+    first_transaction: 'First Transaction',
+    first_budget: 'Budget Created',
+    week_streak: '7 Day Streak',
+    saved_1000: 'Saved R1000',
+    goal_achieved: 'Goal Achieved'
   };
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <h2>Welcome back, {userName}!</h2>
-        <p>Here's your financial overview</p>
+      <div className="welcome-section">
+        <h2>Sawubona! 👋</h2>
+        <p>Welcome to your Ubuntu Finance Coach</p>
       </div>
-
-      {badges.length > 0 && (
-        <div className="badges-section">
-          <h3>🏆 Your Badges</h3>
-          <div className="badges-grid">
-            {badges.includes('first_transaction') && <span className="badge">First Transaction 🎯</span>}
-            {badges.includes('first_budget') && <span className="badge">First Budget 📊</span>}
-            {badges.includes('week_streak') && <span className="badge">7 Day Streak 🔥</span>}
-            {badges.includes('saved_1000') && <span className="badge">Saved R1000 💰</span>}
-            {badges.includes('goal_achieved') && <span className="badge">Goal Achieved 🎉</span>}
-          </div>
-        </div>
-      )}
 
       <div className="stats-grid">
-        {stats.map((stat, idx) => (
-          <div key={idx} className={`stat-card ${stat.color}`}>
-            <div className="stat-icon">{stat.icon}</div>
-            <div className="stat-content">
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
+        <div className="stat-card balance">
+          <div className="stat-icon">💵</div>
+          <div className="stat-content">
+            <div className="stat-label">Current Balance</div>
+            <div className={`stat-value ${currentBalance < 0 ? 'negative' : ''}`}>
+              R {currentBalance.toFixed(2)}
             </div>
+            <div className="stat-hint">Available after expenses & savings</div>
           </div>
-        ))}
+        </div>
+
+        <div className="stat-card expenses">
+          <div className="stat-icon">📤</div>
+          <div className="stat-content">
+            <div className="stat-label">Monthly Expenses</div>
+            <div className="stat-value">R {monthlyExpenses.toFixed(2)}</div>
+            <div className="stat-hint">Total spent this month</div>
+          </div>
+        </div>
+
+        <div className="stat-card savings">
+          <div className="stat-icon">🎯</div>
+          <div className="stat-content">
+            <div className="stat-label">Total Savings</div>
+            <div className="stat-value">R {totalSavings.toFixed(2)}</div>
+            <div className="stat-hint">Money set aside for goals</div>
+          </div>
+        </div>
+
+        <div className="stat-card streak">
+          <div className="stat-icon">🔥</div>
+          <div className="stat-content">
+            <div className="stat-label">Day Streak</div>
+            <div className="stat-value">{streak.current}</div>
+            <div className="stat-hint">Keep the momentum going!</div>
+          </div>
+        </div>
       </div>
 
-      <div className="quick-actions">
-        <h3>Quick Actions</h3>
-        <div className="action-buttons">
-          <button className="action-btn" onClick={() => setShowModal('income')}>
-            <span>➕</span> Add Income
-          </button>
-          <button className="action-btn" onClick={() => setShowModal('expense')}>
-            <span>➖</span> Add Expense
-          </button>
+      <div className="badges-section">
+        <h3>Your Badges</h3>
+        <div className="badges-grid">
+          {badges.length === 0 ? (
+            <p className="no-badges">Start your financial journey to earn badges! 🌟</p>
+          ) : (
+            badges.map(badge => (
+              <div key={badge} className="badge">
+                <span className="badge-icon">{badgeIcons[badge]}</span>
+                <span className="badge-name">{badgeNames[badge]}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       <div className="recent-activity">
-        <h3>Recent Activity</h3>
-        {recentTransactions.length === 0 ? (
+        <div className="activity-header">
+          <h3>Recent Activity</h3>
+          <div className="quick-actions">
+            <button 
+              className="quick-btn income"
+              onClick={() => handleAddTransaction('income')}
+            >
+              + Add Income
+            </button>
+            <button 
+              className="quick-btn expense"
+              onClick={() => handleAddTransaction('expense')}
+            >
+              + Add Expense
+            </button>
+          </div>
+        </div>
+
+        {transactions.length === 0 ? (
           <div className="empty-state">
-            <p>No transactions yet. Start by adding your first income or expense!</p>
+            <div className="empty-icon">📝</div>
+            <p>No transactions yet. Add your first one!</p>
           </div>
         ) : (
-          <div className="transaction-list">
-            {recentTransactions.map(t => (
-              <div key={t.id} className={`transaction-item ${t.type}`}>
-                <div className="transaction-info">
-                  <div className="transaction-category">{t.category}</div>
-                  {t.description && <div className="transaction-desc">{t.description}</div>}
-                  <div className="transaction-date">
-                    {new Date(t.date).toLocaleDateString('en-ZA')}
-                  </div>
+          <div className="activity-list">
+            {transactions.slice(0, 5).map(transaction => (
+              <div key={transaction.id} className={`activity-item ${transaction.type}`}>
+                <div className="activity-icon">
+                  {transaction.type === 'income' ? '📈' : '📉'}
                 </div>
-                <div className={`transaction-amount ${t.type}`}>
-                  {t.type === 'income' ? '+' : '-'}R {t.amount.toFixed(2)}
+                <div className="activity-details">
+                  <div className="activity-description">{transaction.description}</div>
+                  <div className="activity-category">{transaction.category}</div>
+                </div>
+                <div className={`activity-amount ${transaction.type}`}>
+                  {transaction.type === 'income' ? '+' : '-'}R {transaction.amount.toFixed(2)}
                 </div>
               </div>
             ))}
@@ -107,9 +156,9 @@ export default function Dashboard({ userName }) {
 
       {showModal && (
         <TransactionModal
-          type={showModal}
-          onClose={() => setShowModal(null)}
-          onSubmit={handleAddTransaction}
+          type={modalType}
+          onClose={() => setShowModal(false)}
+          onSubmit={handleSubmitTransaction}
         />
       )}
     </div>

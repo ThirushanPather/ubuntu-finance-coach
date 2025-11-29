@@ -1,122 +1,215 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useFinance } from '../contexts/FinanceContext';
 import './Chat.css';
 
+const ARK_API_URL = '/api/v1';
+
 export default function Chat() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'agent',
-      text: 'Sawubona! 👋 I\'m here to help you with your financial journey. How can I assist you today?',
-      timestamp: new Date()
+  // Load conversation from localStorage on mount
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('chatMessages');
+    if (saved) {
+      return JSON.parse(saved);
     }
-  ]);
+    return [
+      {
+        role: 'assistant',
+        content: 'Sawubona! 👋 I\'m your Ubuntu Finance Coach. I can help you:\n\n• Create a personalized budget\n• Set savings goals\n• Track your spending\n• Give financial advice\n\nWhat would you like help with today?'
+      }
+    ];
+  });
+  
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [connected, setConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const { addTransaction, updateBudget, addSavingsGoal } = useFinance();
+
+  // Save conversation to localStorage whenever it changes
   useEffect(() => {
-    fetch('/api/health')
-      .then(res => setConnected(res.ok))
-      .catch(() => setConnected(false));
-  }, []);
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom();
   }, [messages]);
+
+  const parseAIResponse = (response) => {
+    let parsedResponse = response;
+    let actionsPerformed = [];
+
+    // Check for budget creation
+    const budgetMatch = response.match(/```-?budget\n([\s\S]*?)\n```/);
+    if (budgetMatch) {
+      try {
+        const budgetData = JSON.parse(budgetMatch[1]);
+        updateBudget(budgetData);
+        parsedResponse = parsedResponse.replace(/```-?budget\n[\s\S]*?\n```/, '');
+        actionsPerformed.push('✅ **Budget created!** Check the Budget tab to see your new budget.');
+      } catch (e) {
+        console.error('Failed to parse budget:', e);
+        actionsPerformed.push('❌ Failed to create budget. Please try again.');
+      }
+    }
+
+    // Check for savings goal
+    const goalMatch = response.match(/```-?goal\n([\s\S]*?)\n```/);
+    if (goalMatch) {
+      try {
+        const goalData = JSON.parse(goalMatch[1]);
+        addSavingsGoal(goalData);
+        parsedResponse = parsedResponse.replace(/```-?goal\n[\s\S]*?\n```/, '');
+        actionsPerformed.push('✅ **Savings goal created!** Check the Savings tab to track your progress.');
+      } catch (e) {
+        console.error('Failed to parse goal:', e);
+        actionsPerformed.push('❌ Failed to create savings goal. Please try again.');
+      }
+    }
+
+    // Check for transaction
+    const transactionMatch = response.match(/```-?transaction\n([\s\S]*?)\n```/);
+    if (transactionMatch) {
+      try {
+        const transactionData = JSON.parse(transactionMatch[1]);
+        addTransaction(transactionData);
+        parsedResponse = parsedResponse.replace(/```-?transaction\n[\s\S]*?\n```/, '');
+        actionsPerformed.push('✅ **Transaction added!** Check your Dashboard to see the update.');
+      } catch (e) {
+        console.error('Failed to parse transaction:', e);
+        actionsPerformed.push('❌ Failed to add transaction. Please try again.');
+      }
+    }
+
+    // Combine parsed response with action notifications
+    if (actionsPerformed.length > 0) {
+      return parsedResponse.trim() + '\n\n' + actionsPerformed.join('\n');
+    }
+
+    return parsedResponse;
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMsg = { sender: 'user', text: input, id: Date.now(), timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
-    const messageText = input;
+    const userMessage = { role: 'user', content: input };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      const createResponse = await fetch('/api/v1/queries', {
+      // Create query
+      const queryName = `query-${Date.now()}`;
+      
+      // Build conversation history as a single input string
+      const conversationContext = updatedMessages
+        .slice(0, -1) // Exclude the current message
+        .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n\n');
+      
+      const fullInput = conversationContext 
+        ? `Previous conversation:\n${conversationContext}\n\nCurrent user message: ${input}`
+        : input;
+      
+      const payload = {
+        name: queryName,
+        input: fullInput,
+        targets: [{ name: 'ubuntu-orchestrator-agent', type: 'agent' }]
+      };
+      
+      console.log('Sending to API:', payload);
+      
+      const createResponse = await fetch(`${ARK_API_URL}/queries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `query-${Date.now()}`,
-          input: messageText,
-          targets: [{ name: 'ubuntu-orchestrator-agent', type: 'agent' }]
-        })
+        body: JSON.stringify(payload)
       });
 
-      const queryData = await createResponse.json();
-      const queryName = queryData.name;
+      if (!createResponse.ok) {
+        throw new Error('Failed to create query');
+      }
+
+      // Poll for response
+      let attempts = 0;
+      const maxAttempts = 30;
       
-      let agentText = 'No response received';
-      for (let i = 0; i < 30; i++) {
+      while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        const statusResponse = await fetch(`/api/v1/queries/${queryName}`);
-        const statusData = await statusResponse.json();
-        
-        if (statusData.status?.phase === 'done') {
-          if (statusData.status.responses?.[0]?.content) {
-            agentText = statusData.status.responses[0].content;
-          }
-          break;
+        const statusResponse = await fetch(`${ARK_API_URL}/queries/${queryName}`);
+        const data = await statusResponse.json();
+
+        if (data.status.phase === 'done') {
+          const rawResponse = data.status.responses[0].content;
+          const parsedResponse = parseAIResponse(rawResponse);
+          
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: parsedResponse
+          }]);
+          setIsLoading(false);
+          return;
         }
-        
-        if (statusData.status?.phase === 'failed') {
-          agentText = 'Sorry, I encountered an error. Please try again.';
-          break;
+
+        if (data.status.phase === 'failed') {
+          throw new Error('Query failed');
         }
+
+        attempts++;
       }
-      
-      setMessages(prev => [...prev, { 
-        sender: 'agent', 
-        text: agentText,
-        id: Date.now() + 1,
-        timestamp: new Date()
-      }]);
+
+      throw new Error('Query timeout');
+
     } catch (error) {
-      setMessages(prev => [...prev, { 
-        sender: 'agent', 
-        text: 'Connection error. Please ensure ARK API is running.',
-        id: Date.now() + 1,
-        timestamp: new Date()
+      console.error('Error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.'
       }]);
-    } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const clearConversation = () => {
+    const initialMessage = {
+      role: 'assistant',
+      content: 'Sawubona! 👋 I\'m your Ubuntu Finance Coach. I can help you:\n\n• Create a personalized budget\n• Set savings goals\n• Track your spending\n• Give financial advice\n\nWhat would you like help with today?'
+    };
+    setMessages([initialMessage]);
+    localStorage.setItem('chatMessages', JSON.stringify([initialMessage]));
   };
 
   return (
     <div className="chat-container">
       <div className="chat-header">
-        <h2>Your Finance Coach</h2>
-        <div className={`connection-badge ${connected ? 'connected' : 'disconnected'}`}>
-          <span className="status-dot"></span>
-          {connected ? 'Connected' : 'Offline'}
-        </div>
+        <button className="clear-chat-btn" onClick={clearConversation} title="Clear conversation">
+          🗑️ Clear Chat
+        </button>
       </div>
-
-      <div className="messages-area">
+      <div className="chat-messages">
         {messages.map((msg, idx) => (
-          <div 
-            key={msg.id} 
-            className={`message ${msg.sender}`}
-            style={{ animationDelay: `${idx * 50}ms` }}
-          >
-            <div className="message-bubble">
-              <div className="message-text">{msg.text}</div>
-              <div className="message-time">{formatTime(msg.timestamp)}</div>
+          <div key={idx} className={`message ${msg.role}`}>
+            <div className="message-content">
+              {msg.content.split('\n').map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
             </div>
           </div>
         ))}
-        
-        {loading && (
-          <div className="message agent">
-            <div className="message-bubble">
+        {isLoading && (
+          <div className="message assistant">
+            <div className="message-content loading">
               <div className="typing-indicator">
                 <span></span>
                 <span></span>
@@ -125,28 +218,24 @@ export default function Chat() {
             </div>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="chat-input">
+      <div className="chat-input-container">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-          placeholder="Ask about budgeting, saving, or financial advice..."
-          rows="1"
-          disabled={loading}
+          onKeyPress={handleKeyPress}
+          placeholder="Ask me anything about your finances..."
+          rows="2"
+          disabled={isLoading}
         />
-        <button onClick={sendMessage} disabled={!input.trim() || loading}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
-          </svg>
+        <button 
+          onClick={sendMessage} 
+          disabled={!input.trim() || isLoading}
+          className="send-button"
+        >
+          {isLoading ? '⏳' : '📤'}
         </button>
       </div>
     </div>
