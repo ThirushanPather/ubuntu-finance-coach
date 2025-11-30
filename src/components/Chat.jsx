@@ -137,7 +137,7 @@ export default function Chat() {
 
       // Poll for response
       let attempts = 0;
-      const maxAttempts = 60; // Increased for sequential agents
+      const maxAttempts = 60; // 60 seconds for 2-agent sequential team
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000));

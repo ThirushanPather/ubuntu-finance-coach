@@ -11,7 +11,8 @@ export default function Dashboard() {
     savingsGoals,
     badges, 
     streak,
-    addTransaction 
+    addTransaction,
+    clearAllData
   } = useFinance();
   
   const [showModal, setShowModal] = useState(false);
@@ -50,8 +51,21 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <div className="welcome-section">
-        <h2>Sawubona! 👋</h2>
-        <p>Welcome to your Ubuntu Finance Coach</p>
+        <div>
+          <h2>Sawubona! 👋</h2>
+          <p>Welcome to your Ubuntu Finance Coach</p>
+        </div>
+        <button 
+          className="reset-btn" 
+          onClick={() => {
+            if (window.confirm('⚠️ This will delete ALL your data (budget, transactions, goals, chat history). Are you sure?')) {
+              clearAllData();
+            }
+          }}
+          title="Reset all data for fresh demo"
+        >
+          🔄 Reset Demo
+        </button>
       </div>
 
       <div className="stats-grid">

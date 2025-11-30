@@ -246,6 +246,20 @@ export const FinanceProvider = ({ children }) => {
     return totalIncome - totalExpenses - totalSavingsContributions;
   };
 
+  const clearAllData = () => {
+    // Clear all localStorage
+    localStorage.removeItem('financeUser');
+    localStorage.removeItem('financeTransactions');
+    localStorage.removeItem('financeBudget');
+    localStorage.removeItem('financeSavingsGoals');
+    localStorage.removeItem('financeBadges');
+    localStorage.removeItem('financeStreak');
+    localStorage.removeItem('chatMessages');
+    
+    // Reload page to reset state
+    window.location.reload();
+  };
+
   const value = {
     user,
     updateUser,
@@ -268,7 +282,8 @@ export const FinanceProvider = ({ children }) => {
     getTotalIncome,
     getTotalExpenses,
     getCategorySpending,
-    getCurrentBalance
+    getCurrentBalance,
+    clearAllData
   };
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
