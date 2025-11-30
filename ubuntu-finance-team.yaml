@@ -1,0 +1,15 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Team
+metadata:
+  name: ubuntu-finance-team
+  namespace: default
+  labels:
+    project: ubuntu
+spec:
+  description: Ubuntu Finance Coach Team - Financial advice with compliance review
+  strategy: sequential
+  members:
+    - name: ubuntu-orchestrator-agent
+      type: agent
+    - name: ubuntu-compliance-agent
+      type: agent

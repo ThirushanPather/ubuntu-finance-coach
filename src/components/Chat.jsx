@@ -118,7 +118,9 @@ export default function Chat() {
       const payload = {
         name: queryName,
         input: fullInput,
-        targets: [{ name: 'ubuntu-orchestrator-agent', type: 'agent' }]
+        targets: [
+          { name: 'ubuntu-finance-team', type: 'team' }
+        ]
       };
       
       console.log('Sending to API:', payload);
@@ -135,7 +137,7 @@ export default function Chat() {
 
       // Poll for response
       let attempts = 0;
-      const maxAttempts = 30;
+      const maxAttempts = 60; // Increased for sequential agents
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000));

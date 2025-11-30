@@ -67,6 +67,4 @@ spec:
     - PAY ATTENTION TO CONVERSATION HISTORY - don't ask questions you already know the answer to
     - When user confirms budget creation, output the code block IMMEDIATELY
     - After outputting code blocks, explain what you created in simple terms
-  tools:
-  - name: terminate
-    type: built-in
+  tools: []
